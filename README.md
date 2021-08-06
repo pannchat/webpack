@@ -275,7 +275,7 @@ NPM은 `Website`를 통해 패키지와 관련 문서를 찾거나 공유할 수
 
 ## Bundle이 중요한 이유?
 
-[Bundle이란?](https://pannchat.tistory.com/entry/Webpack-%EC%9D%B4-%EB%AD%94%EB%8D%B01) 
+[Bundle이란?](https://github.com/pannchat/webpack/tree/main#%EB%AA%A8%EB%93%88-%EB%B2%88%EB%93%A4%EB%9F%AC%EB%9E%80) 
 
 번들은 웹팩에 대해 이해할 때 알아봤습니다. 이번에는 번들을 왜 사용하는지, 이게 왜 중요한지에 대해 알아봅니다.
 
