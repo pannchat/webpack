@@ -1,4 +1,6 @@
 공부한 내용을 정리했습니다. 참조한 자료는 하단에 링크해 놓았습니다.
+
+
 # webpack
 웹팩이 뭔데
 웹팩은 최신 프론트엔드 프레임워크에서 가장 많이사용되는 모던 Javascript 애플리케이션을 위한 정적 모듈 번들러입니다. 
@@ -1013,6 +1015,281 @@ plugins : [
 ...
 ```
 
+title 값이 문서에 전달 될 것입니다.
+
+handlebars는 `mustache` 기법을 사용하여 데이터를 전달합니다. {{}} 중괄호 두개로 감싸서 사용하는데 이 모양이 마치 수염같다고 하여 `mustache` 라는 이름이 붙었습니다.
+
+ `html-webpack-plugin`  을 통해 전달이 될때는 template의 `htmlWebpackPlugin.options` 라는 공간에 데이터들이 전달됩니다. 따라서 `{{htmlWebpackPlugin.options.title}}` 을 통해 데이터에 접근할 수 있습니다.
+
+```html
+<!-- template.hbs -->
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Getting Started</title>
+    </head>
+    <body>
+        <div>Hello {{htmlWebpackPlugin.options.title}}</div>
+    </body>
+</html>
+```
+
+```html
+$ npx webpack
+```
+
+이제 번들링 된 `dist/index.html` 파일을 살펴봅니다.
+
+```html
+<!-- dist/index.html -->
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Getting Started</title>
+    <script defer src="bundle.js"></script></head>
+    <body>
+        <div>Hello Webpack</div>
+    </body>
+</html>
+```
+
+지웠던 script 태그는 자동으로 추가되었고 `{{htmlWebpackPlugin.options.title}}` 은 Webpack으로 치환된 것을 확인할 수 있습니다.
+
+추가로 webpack 설정 파일에서 meta라는 키를 사용해서 meta태그를 설정해보겠습니다.
+
+```jsx
+//webpack.config.js
+...
+...
+plugins : [
+        new HtmlWebpackPlugin({
+            title: 'Webpack',
+            template: './template.hbs',
+            meta: {
+                viewport: 'width=device-width, initial-scale=1'
+            }
+        })
+    ],
+    mode:'none'
+...
+...
+```
+
+webpack config 파일에 meta 태그를 추가해서 viewport 설정을 마치고
+
+다시 한 번 번들링 된 결과물을 살펴봅시다.
+
+```html
+<!-- dist/index.html -->
+<meta charset="utf-8" />
+        <title>Getting Started</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script defer src="bundle.js"></script>
+    </head>
+```
+
+meta 태그가 잘 삽입된 것을 확인해 보세요
+
+## Caching & Webpack
+
+![image](https://user-images.githubusercontent.com/49192400/133106798-d4284e68-3d80-4bc6-9d8c-26946e5298ea.png)
+
+web application은 기본적으로 서버와 클라이언트로 나눠 생각해볼 수 있습니다. 사용자는 클라이언트를 통해 서비스를 이용하고 클라이언트는 서버에 사용자의 요청을 전달하고 서버는 요청을 처리한뒤 클라이언트를 통해 사용자가 요청한 서비스를 제공합니다.
+
+데이터를 요청하고 받는 과정에서 cost가 발생합니다. 이 cost를 최소화하기 위해 caching을 사용합니다. cost는 금전적인 비용 외에도 사용자가 데이터를 요청하고 받는 과정에서 걸리는 시간을 의미하기도 합니다.
+
+캐시에는 여러종류가 있는데 이 문서는 local cache에 대해 말합니다.
+
+일반적으로 우리가 번들링한 파일을 배포하면 클라이언트가 해당 서버에 접근하여 사이트와 에셋을 가져옵니다. 가져오는 과정에서 시간이 많이 걸릴 수 있기 때문에 브라우저는 `캐싱`이라는 기술을 사용합니다. 이렇게 불필요한 네트워크 트래픽을 줄이면서 사이트를 더 빨리 로드할 수 있게 합니다.
+
+![image](https://user-images.githubusercontent.com/49192400/133106834-e09d340e-7ff0-4115-9a34-93641ad4ef22.png)
+
+브라우저(클라이언트) 에서 번들파일을 받아와 동작시키는데 브라우저가 캐싱을 구분하는 기준은 url입니다. 로드하는 리소스의 이름이 같은경우 캐싱을 이용하기 때문에 파일이 수정되었을 경우 이전에 캐싱한 파일을 사용하기 때문에 마치 수정이 안된 것 처럼 보일 수 있습니다. 따라서 이러한 문제를 해결하기위해 webpack에서 bundle파일 이름에 hash값을 붙입니다.
+
+파일이 번들링될 때만 hash값을 변경해주는 것입니다.
+
+### hash
+
+webpack을 통해 filename 이름에 넣을 수 있는 hash값은 총 3가지입니다.
+
+- `hash`
+- `contenthash`
+- `chunkhash`
+
+### hash
+
+파일이 build 될때 자동으로 hash값이 부여됩니다
+
+```jsx
+//webpack.config.js
+...
+module.exports={
+    entry: './src/index.js',
+    output: {
+        filename : 'bundle.[hash].js',
+        path : path.resolve(__dirname, 'dist'),
+    },
+...
+```
+
+output filename 에서 [hash]를 추가해주세요. 그리고 다시 번들링해주고 결과를 살펴봅니다.
+
+hash값이 적용된 번들파일이 생성되고 자동으로 생성되는 index.html파일도 hash값이 적용된 스크립트를 불러옵니다.
+
+```jsx
+dist/
++ | bundle.1c44a69b5d7cc3be3083.js
+  | bundle.js
+	| index.html
+```
+
+```jsx
+//dist > index.html
+<script defer src="bundle.1c44a69b5d7cc3be3083.js"></script>
+```
+
+하지만 파일이 수정되고 번들링 할때마다 새로운 번들파일이 생성되는데 이런 문제를 해결하기 위해서 이 문제를 해결해주는 plugin을 설치해줍니다.
+
+이때 필요한것이 `clean-webpack-plugin` 입니다. 이 플러그인을 등록해주면 빌드가 될 때마다 빌드된 파일이 위치한 디렉터리를 비워주게 됩니다. (새로 생성된 파일만 남도록 해줍니다)
+
+```jsx
+$ npm install clean-webpack-plugin -D
+```
+
+설치가 완료되었다면
+
+```jsx
+//webpack.config.js
+...
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+...
+...
+plugins : [
+        new HtmlWebpackPlugin({
+            title: 'Webpack',
+            template: './template.hbs',
+            meta: {
+                viewport: 'width=device-width, initial-scale=1'
+            }
+        }),
+        new CleanWebpackPlugin(),
+    ],
+...
+
+```
+
+require을 통해 `clean-webpack-plugin` 을 불러와주고 다른 플러그인들과 마찬가지로 plugin에 추가해줘야합니다.
+
+설정후 다시 번들링하고 dist를 확인해봅니다.
+
+contenthash를 알아보기전에 css 내용을 html파일 문서내에 포함시키지 않고 css파일을 별도로 분리할 것입니다. 
+
+`mini-css-extract-plugin` 를 설치해줍니다.
+
+```jsx
+$ npm install mini-css-extract-plugin -D
+```
+
+[mini-css-extract-plugin](http://npmjs.com/package/mini-css-extract-plugin) 은 css파일을 별도로 추출하고, CSS 코드가 포함된 JS파일 별로 CSS파일을 생성합니다. 
+
+```jsx
+...
+...
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+...
+...
+    module:{
+        rules:[
+            {
+                test:/\.css$/i,
+                use:[
+                    {
+                        loader: MiniCssExtractPlugin.loader
+                    },
+                    {
+                        loader : 'css-loader',
+                        options:{
+                            modules:true
+                        }  
+                    }
+                ],
+            },{
+                test: /\.hbs$/,
+                use: ['handlebars-loader']
+            }
+        ]
+    },
+    plugins : [
+        new MiniCssExtractPlugin(),
+        new HtmlWebpackPlugin({
+            title: 'Webpack',
+            template: './template.hbs',
+            meta: {
+                viewport: 'width=device-width, initial-scale=1'
+            }
+        }),
+        new CleanWebpackPlugin(),
+    ],
+    mode:'none'
+}
+```
+
+config 파일에서 style-loader 모듈은 MiniCssExtractPlugin과 하는일이 비슷해서 충돌이 일어날 수 있으므로 style-loader는 제거해줍니다.
+
+그리고 style-loader 대신 `MiniCssExtractPlugin.loader` 를 사용합니다.
+
+그리고 plugins 배열에 `MiniCssExtractPlugin` 을 추가해줍니다. 이후 번들링을 진행하면. css파일이 분리되어 나오고 `index.html` 에 
+
+```jsx
+<link href="main.css" rel="stylesheet">
+```
+
+이 추가된 것을 확인할 수 있습니다.
+
+이렇게 되면 css자원은 캐싱이 되어 활용될 수 있고 HTML 문서의 크기는 조금 줄어드는 효과가 있습니다. 파일이 분리되었기 때문에 css파일을 별도로 캐싱하여 재활용할 수 있습니다. 
+
+하지만 여기서 bundle.js에서의 문제처럼 main.css 로 파일 이름이 고정되어있는것이 문제입니다. main.css의 내용이 변경되어도 캐싱되어있는 파일을 불러오는 문제가 생길 수 있습니다. 따라서 해시값을 적용해봅니다.
+
+```jsx
+//webpack.config.js
+plugins : [
+        new MiniCssExtractPlugin({
+            filename:'[hash].css'
+        }),
+        new HtmlWebpackPlugin({
+```
+
+webpack config 파일에서 plugins 배열에서 MiniCssExtractPlugin에 filename에 hash 를 적용해주고 다시 번들링해줍니다. 기존의 main.css가 사라지고 해시값이 적용된 css파일이 생성되어있습니다.
+
+여기서 또 다른 문제점이 있습니다. 
+
+js파일과 css파일의 수정시점이 다르다는 것에 있습니다. js파일이 수정된다해서 css의 스타일이 수정되지는 않을 것입니다. 하지만 js가 수정되고 다시 빌드하면 css파일도 다시 생성됩니다.
+
+이를 확인하기 위해서는 index.js의 파일을 살짝 수정해줍니다.
+
+```jsx
+//index.js
+...
+...
+function component(){
+    const element = document.createElement('div');
+    element.innerHTML = 'Hello Webpack!';
+...
+...
+```
+
+그리고 다시 번들링.
+
+css 파일은 변경된 것이 없음에도 불구하고 css의 해시값도 변한것을 볼 수 있습니다. 이렇게 되면 css는 변함이 없음에도 캐싱된 데이터를 사용하지 않을 것입니다. 이를 방지하기 위해 contenthash를 사용합니다.	
+	
+	
+	
+	
+	
+	
+	
 # [아직 작성중..]
 
 참고 문서
